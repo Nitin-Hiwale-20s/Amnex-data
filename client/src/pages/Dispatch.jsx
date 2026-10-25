@@ -8,11 +8,11 @@ export default function Dispatch({ id, user, go }) {
   const canEdit = can(user, 'inventory', 'edit');
   const [d, setD] = useState(null);
   const [edit, setEdit] = useState(false);
-  const load = () => api(`/api/dispatches/${id}`).then(setD).catch(e => { toast(e.message, 'err'); go('dis'); });
+  const load = () => api(`/api/dispatches/${id}`).then(setD).catch(e => { toast(e.message, 'err'); go('dis', {}, true); });
   useEffect(() => { load(); }, [id]);
   const del = async () => {
     if (!confirm('Delete this dispatch? Its serial numbers go back to Received.')) return;
-    try { await api(`/api/dispatches/${id}`, 'DELETE'); toast('Dispatch deleted'); go('dis'); } catch (er) { toast(er.message, 'err'); }
+    try { await api(`/api/dispatches/${id}`, 'DELETE'); toast('Dispatch deleted'); go('dis', {}, true); } catch (er) { toast(er.message, 'err'); }
   };
   const dl = fmtx => download(`/api/export/dispatch/${fmtx}?id=${id}`).catch(e => toast(e.message, 'err'));
   if (!d) return <p className="loading">Loading...</p>;

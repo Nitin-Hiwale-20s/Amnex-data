@@ -9,5 +9,7 @@ import '@fontsource/orbitron/700.css';
 import '@fontsource/orbitron/900.css';
 import './styles.css';
 import App from './App.jsx';
+import { initMobileTables } from './mobile.js';
 
 createRoot(document.getElementById('root')).render(<App />);
+initMobileTables();

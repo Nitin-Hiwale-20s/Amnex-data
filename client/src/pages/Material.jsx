@@ -13,7 +13,7 @@ export default function Material({ id, user, go }) {
   const [flt, setFlt] = useState('');
   const [challans, setChallans] = useState([]);
   const [modal, setModal] = useState(null); // edit | serials | delivery | {delivery}
-  const load = () => api(`/api/materials/${id}`).then(setD).catch(e => { toast(e.message, 'err'); go('mat'); });
+  const load = () => api(`/api/materials/${id}`).then(setD).catch(e => { toast(e.message, 'err'); go('mat', {}, true); });
   useEffect(() => { load(); api('/api/challans').then(setChallans).catch(() => {}); }, [id]);
 
   const rows = useMemo(() => {
@@ -24,7 +24,7 @@ export default function Material({ id, user, go }) {
   const delMaterial = async () => {
     const m = d.material;
     if (!confirm(`Delete "${m.name}" with ${m.serials} serial number(s) and ${m.deliveries} delivery entr${m.deliveries === 1 ? 'y' : 'ies'}? This cannot be undone.`)) return;
-    try { await api(`/api/materials/${id}`, 'DELETE'); toast('Material deleted'); go('mat'); } catch (er) { toast(er.message, 'err'); }
+    try { await api(`/api/materials/${id}`, 'DELETE'); toast('Material deleted'); go('mat', {}, true); } catch (er) { toast(er.message, 'err'); }
   };
   const delDelivery = async x => { if (!confirm(`Delete the delivery of ${x.qty} on ${fmt(x.date)}?`)) return; try { await api(`/api/deliveries/${x._id}`, 'DELETE'); toast('Deleted'); load(); } catch (er) { toast(er.message, 'err'); } };
   if (!d) return <p className="loading">Loading...</p>;

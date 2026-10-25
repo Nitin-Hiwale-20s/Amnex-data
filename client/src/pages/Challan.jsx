@@ -11,11 +11,11 @@ export default function Challan({ id, user, go }) {
   const [d, setD] = useState(null);
   const [modal, setModal] = useState(null);
   const [challans, setChallans] = useState([]);
-  const load = () => api(`/api/challans/${id}`).then(setD).catch(e => { toast(e.message, 'err'); go('chl'); });
+  const load = () => api(`/api/challans/${id}`).then(setD).catch(e => { toast(e.message, 'err'); go('chl', {}, true); });
   useEffect(() => { load(); api('/api/challans').then(setChallans).catch(() => {}); }, [id]);
   const del = async () => {
     if (!confirm(`Delete challan ${d.challan.dcNo}? Its ${d.items.length} item(s) are kept, they just no longer belong to a challan.`)) return;
-    try { await api(`/api/challans/${id}`, 'DELETE'); toast('Challan deleted'); go('chl'); } catch (er) { toast(er.message, 'err'); }
+    try { await api(`/api/challans/${id}`, 'DELETE'); toast('Challan deleted'); go('chl', {}, true); } catch (er) { toast(er.message, 'err'); }
   };
   const dl = fmt => download(`/api/export/reconciliation/${fmt}?challan=${id}`).catch(e => toast(e.message, 'err'));
   if (!d) return <p className="loading">Loading...</p>;

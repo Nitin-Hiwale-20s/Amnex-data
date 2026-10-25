@@ -76,9 +76,31 @@ export default function App() {
   const [boot, setBoot] = useState('loading');
   const [user, setUser] = useState(null);
   const [view, setView] = useState({ page: 'home' });
+  const [depth, setDepth] = useState(0); // how many screens we can go back through inside the app
   const [acct, setAcct] = useState(false);
   const [theme, setTheme] = useTheme();
-  const go = (page, p = {}) => { setView({ page, ...p }); window.scrollTo(0, 0); };
+  // Every screen change is saved in the browser history, so the in-app Back button
+  // AND the phone / browser back button return to the previous screen instead of leaving the app.
+  // replace = true swaps the current screen (used after delete, so Back does not return to a deleted record).
+  const go = (page, p = {}, replace = false) => {
+    const v = { page, ...p };
+    // tapping the screen you are already on must not add another history entry
+    if (JSON.stringify(window.history.state?.view) === JSON.stringify(v)) replace = true;
+    const d = (window.history.state?.depth ?? 0) + (replace ? 0 : 1);
+    try { window.history[replace ? 'replaceState' : 'pushState']({ view: v, depth: d }, ''); } catch { /* ignore */ }
+    setView(v); setDepth(d); window.scrollTo(0, 0);
+  };
+  const back = () => { if (depth > 0) window.history.back(); else go('home', {}, true); };
+
+  useEffect(() => {
+    try { window.history.replaceState({ view: { page: 'home' }, depth: 0 }, ''); } catch { /* ignore */ }
+    const onPop = e => {
+      const st = e.state;
+      setView(st?.view || { page: 'home' }); setDepth(st?.depth || 0); window.scrollTo(0, 0);
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
 
   useEffect(() => {
     const f = () => { setUser(null); setBoot('login'); };
@@ -96,8 +118,13 @@ export default function App() {
     })();
   }, []);
 
+  useEffect(() => { document.querySelector('.nav button.on')?.scrollIntoView({ inline: 'center', block: 'nearest' }); }, [view.page, boot]);
+
   const logout = () => { setToken(null); setUser(null); setAcct(false); setBoot('login'); };
-  const done = u => { setUser(u); setView({ page: 'home' }); setBoot('ready'); };
+  const done = u => {
+    try { window.history.replaceState({ view: { page: 'home' }, depth: 0 }, ''); } catch { /* ignore */ }
+    setUser(u); setView({ page: 'home' }); setDepth(0); setBoot('ready');
+  };
 
   if (boot === 'loading') return <div className="auth"><p className="loading">Loading...</p></div>;
   if (boot !== 'ready' || !user) return <><div className="auth-theme"><ThemeSwitch theme={theme} setTheme={setTheme} /></div><AuthScreen key={boot} initial={boot === 'setup' ? 'setup' : 'login'} onDone={done} /><ToastHost /></>;
@@ -148,8 +175,11 @@ export default function App() {
         <ThemeSwitch theme={theme} setTheme={setTheme} />
         <button className="me" onClick={() => setAcct(true)}><span className="avatar">{user.name[0]}</span><span><b>{user.name}</b><small>{ROLE_LABEL[user.role]}</small></span></button>
       </aside>
-      <header className="mtop"><div className="brand"><Logo size={32} /><b>{APP_NAME}</b></div><div className="mtop-right"><ThemeFab theme={theme} setTheme={setTheme} /><button className="avatar" onClick={() => setAcct(true)} aria-label="My account">{user.name[0]}</button></div></header>
-      <main>{body}</main>
+      <header className="mtop"><div className="mtop-left">{depth > 0 && <button className="back-fab" onClick={back} aria-label="Back"><Icon name="back" size={20} /></button>}<div className="brand"><Logo size={32} /><b>{APP_NAME}</b></div></div><div className="mtop-right"><ThemeFab theme={theme} setTheme={setTheme} /><button className="avatar" onClick={() => setAcct(true)} aria-label="My account">{user.name[0]}</button></div></header>
+      <main>
+        {depth > 0 && <button className="btn sm back-btn" onClick={back}><Icon name="back" size={16} />Back</button>}
+        {body}
+      </main>
       {acct && <Account user={user} onClose={() => setAcct(false)} onLogout={logout} />}
       <ToastHost />
     </div>
