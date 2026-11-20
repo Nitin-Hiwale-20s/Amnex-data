@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { STATUSES } from './constants.js';
 
 const ICONS = {
@@ -48,13 +49,15 @@ export function Modal({ title, onClose, children, wide }) {
     document.body.style.overflow = 'hidden';
     return () => { window.removeEventListener('keydown', k); document.body.style.overflow = ''; };
   }, [onClose]);
-  return (
+  // Rendered straight into <body> (portal), so the card/table it was opened from cannot cut it off.
+  return createPortal(
     <div className="overlay" onMouseDown={e => e.target === e.currentTarget && onClose()}>
       <div className={'sheet' + (wide ? ' wide' : '')} role="dialog" aria-label={title}>
         <div className="sheet-h"><h3>{title}</h3><button className="icon-btn" onClick={onClose} aria-label="Close"><Icon name="x" /></button></div>
         <div className="sheet-b">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
